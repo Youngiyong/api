@@ -20,7 +20,6 @@ public class APIController {
     CompanyService companyService;
 
     //점포 상세 정보 조회 API
-    @ResponseBody
     @GetMapping("/getCompanyDetailInfoList/{id}")
     public List<CompanyVO> getCompanyDetailInfoList(@PathVariable  int id) throws Exception {
         return companyService.getCompanyDetailInfo(id);
@@ -28,7 +27,6 @@ public class APIController {
 
 
     //점포 조회 API
-    @ResponseBody
     @GetMapping("/getTodayAllStatusCompanyAPI")
     public List<Map<String, Object>> getTodayAllStatusCompanyAPI() {
         return companyService.getTodayAllStatusCompany(new DateDay().getToday());
