@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.test.api.module.api.dao.CompanyMapper">
+
+    <select id="getCompanyDetailInfo" parameterType="integer" resultType="com.test.api.module.api.bean.CompanyVO">
+        SELECT COMPANY_ID AS companyId
+             , COMPANY_NAME AS companyName
+             , COMPANY_OWNER AS companyOwner
+             , DESCRIPTION AS description
+             , COMPANY_LEVEL AS companyLevel
+             , COMPANY_ADDRESS AS companyAddress
+             , COMPANY_PHONE AS companyPhone
+        FROM   COMPANY
+        WHERE  COMPANY_ID = #{id}
+    </select>
+
+    <select id="getBusinessDetailList" parameterType="java.util.Map" resultType="java.util.Map" >
+        SELECT BT.BUSINESS_DAY businessDay
+        , BT.BUSINESS_OPEN_TIME businessOpenTime
+        , BT.BUSINESS_CLOSE_TIME businessCloseTime
+        , (
+        SELECT CASE
+        WHEN (
+        SELECT TO_DATE(HH.HOLIDAY, 'YYYY-MM-DD')
+        FROM   BUSINESS_HOLIDAY  HH
+        WHERE  HH.HOLIDAY_ID = BT.HOLIDAY_ID
+        )  = TO_DATE(CURRENT_TIMESTAMP, 'YYYY-MM-DD')
+        THEN 'HOILDAY'
+        WHEN REPLACE(BUSINESS_OPEN_TIME,':','')  <![CDATA[<=]]>  FORMATDATETIME(CURRENT_TIMESTAMP, 'HHmm')
+        AND   FORMATDATETIME(CURRENT_TIMESTAMP, 'HHmm')   <![CDATA[<=]]> REPLACE(BUSINESS_CLOSE_TIME,':','')
+        THEN 'OPEN'
+        WHEN  FORMATDATETIME(CURRENT_TIMESTAMP, 'HHmm')   <![CDATA[<]]> REPLACE(BUSINESS_OPEN_TIME,':','')
+        OR   FORMATDATETIME(CURRENT_TIMESTAMP, 'HHmm')   <![CDATA[>]]> BT.BUSINESS_CLOSE_TIME
+        THEN 'CLOSE'
+        END
+        ) status
+        FROM BUSINESS_TIMES BT
+        WHERE BT.COMPANY_ID = #{companyId}
+        AND BT.BUSINESS_DAY IN
+        <foreach item="item" index="index" collection="days"
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getTodayAllStatusCompany" parameterType="string" resultType="java.util.Map">
+        SELECT A.COMPANY_NAME companyName
+             , A.DESCRIPTION  description
+             , A.COMPANY_LEVEL companyLevel
+             ,(
+            SELECT CASE
+                       WHEN (
+                                SELECT TO_DATE(HH.HOLIDAY, 'YYYY-MM-DD')
+                                FROM   BUSINESS_HOLIDAY  HH
+                                WHERE  HH.HOLIDAY_ID = BT.HOLIDAY_ID
+                            )  = TO_DATE(CURRENT_TIMESTAMP, 'YYYY-MM-DD')
+                           THEN 'HOILDAY'
+                       WHEN REPLACE(BUSINESS_OPEN_TIME,':','')  <![CDATA[<=]]>  FORMATDATETIME(CURRENT_TIMESTAMP, 'HHmm')
+                           AND   FORMATDATETIME(CURRENT_TIMESTAMP, 'HHmm')   <![CDATA[<=]]> REPLACE(BUSINESS_CLOSE_TIME,':','')
+                           THEN 'OPEN'
+                       WHEN  FORMATDATETIME(CURRENT_TIMESTAMP, 'HHmm')   <![CDATA[<]]> REPLACE(BUSINESS_OPEN_TIME,':','')
+                           OR   FORMATDATETIME(CURRENT_TIMESTAMP, 'HHmm')   <![CDATA[>]]> BT.BUSINESS_CLOSE_TIME
+                           THEN 'CLOSE'
+                       END
+        ) businessStatus
+        FROM COMPANY A
+                 INNER JOIN BUSINESS_TIMES BT
+                            ON A.COMPANY_ID = BT.COMPANY_ID
+        WHERE BT.BUSINESS_DAY = #{date}
+        ORDER BY A.COMPANY_LEVEL
+    </select>
+
+    <select id="getHolidayId" resultType="string">
+        SELECT MAX(HOLIDAY_ID) FROM BUSINESS_HOLIDAY
+    </select>
+
+    <insert id="insertCompanyData" parameterType="com.test.api.module.api.bean.CompanyVO" useGeneratedKeys="true" keyProperty="companyId">
+        INSERT INTO COMPANY (
+                COMPANY_NAME,
+                COMPANY_OWNER,
+                DESCRIPTION,
+                COMPANY_LEVEL,
+                COMPANY_ADDRESS,
+                COMPANY_PHONE
+        )
+        VALUES (
+                 #{companyName}
+               , #{companyOwner}
+               , #{description}
+               , #{companyLevel}
+               , #{companyAddress}
+               , #{companyPhone}
+               )
+    </insert>
+
+    <insert id="insertBusinessTimesData" parameterType="java.util.Map">
+        INSERT INTO BUSINESS_TIMES (
+                BUSINESS_ID,
+                BUSINESS_DAY,
+                BUSINESS_OPEN_TIME,
+                BUSINESS_CLOSE_TIME,
+                COMPANY_ID
+        )
+        VALUES 
+               (
+                 #{businessId}
+               , #{businessDay}
+               , #{businessOpenTime}
+               , #{businessCloseTime}
+               , #{companyId}
+               )
+    </insert>
+
+
+    <insert id="insertHolidayData" parameterType="java.util.Map">
+        INSERT INTO BUSINESS_HOLIDAY(
+            HOLIDAY,
+            COMPANY_ID
+        ) VALUES
+            (
+              #{holiday}
+            , #{companyId}
+            )
+    </insert>
+
+    <delete id="deleteCompanyData" parameterType="integer">
+        DELETE FROM COMPANY WHERE COMPANY_ID = #{id}
+    </delete>
+
+    <delete id="deleteBusinessTimesData" parameterType="integer">
+        DELETE FROM BUSINESS_TIMES WHERE COMPANY_ID = #{id}
+    </delete>
+
+    <delete id="deleteHolidayData" parameterType="integer">
+        DELETE FROM BUSINESS_HOLIDAY WHERE COMPANY_ID = #{id}
+    </delete>
+
+    <update id="updateBusinessDay" parameterType="java.util.Map">
+        UPDATE BUSINESS_TIMES
+        SET HOLIDAY_ID = #{holidayId}
+        WHERE COMPANY_ID = #{companyId}
+        AND BUSINESS_DAY = #{businessDay}
+    </update>
+
+</mapper>
