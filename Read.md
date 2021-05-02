@@ -152,7 +152,7 @@ FOREIGN KEY (company_id) REFERENCES COMPANY(company_id)
 ]
 }
 
-###postHolidayAddAPI(점포 휴무일 등록 API)
+### postHolidayAddAPI(점포 휴무일 등록 API)
 
 {
 "companyId": 1,
@@ -162,10 +162,10 @@ FOREIGN KEY (company_id) REFERENCES COMPANY(company_id)
 ]
 }
 
-###getTodayAllStatusCompanyAPI(점포 목록 조회 API)
+### getTodayAllStatusCompanyAPI(점포 목록 조회 API)
 
 
-###getCompanyDetailInfoList(점포 상세 정보 조회 API)
+### getCompanyDetailInfoList(점포 상세 정보 조회 API)
 
 
-###postStoreDeleteAPI(점포 삭제 API)
+### postStoreDeleteAPI(점포 삭제 API)
